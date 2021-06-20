@@ -7,11 +7,11 @@
 
 <p>This cabinet will store and track all medications for a given clinic.  Here is what the cabinet looks like:</p>
 
-<p><a href=https://www.omnicell.co.uk/US/Products/CP%20Dispense/PoC002%20XT%20Automated%20Dispensing%20Cabinets_1480.jpg" target="_blank" rel="noopener noreferrer">Omnicell Cabinet</a>
+<p><img src="https://www.omnicell.co.uk/US/Products/CP%20Dispense/PoC002%20XT%20Automated%20Dispensing%20Cabinets_1480.jpg" alt=”Omnicell Cabinet”></p>
 
 <p>The cabinet has a series of locations or "bins" where medications are stored.  A drawer bin looks like this:</p>
 
-<p><a href=https://www.pocketnurse.com/media/catalog/product/cache/46c67a7e014cd6344be7c367252caa28/0/4/04-37-1655_2.jpg" target="_blank" rel="noopener noreferrer">Drawer Bin</a>
+<p><img src="https://www.pocketnurse.com/media/catalog/product/cache/46c67a7e014cd6344be7c367252caa28/0/4/04-37-1655_2.jpg" alt=”Drawer Bin”></p>
 
 <p><strong>Please write the control software to support the following requirements:</strong></p> 
 
