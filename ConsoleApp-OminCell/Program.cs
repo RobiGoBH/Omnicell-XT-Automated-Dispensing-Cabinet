@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using NUnit.Framework;
 
 namespace ConsoleApp_OminCell
 {
@@ -11,7 +10,7 @@ namespace ConsoleApp_OminCell
         static void Main(string[] args)
         {
             Cabinet cabinet = new Cabinet();
-            IntialiseCabinet(ref cabinet);
+            cabinet.IntialiseCabinet();
             Console.Write("Provide your User ID, please (0-5): ");
 
             int userId = -1;
@@ -33,6 +32,7 @@ namespace ConsoleApp_OminCell
                 Console.WriteLine("1: Remove Medication from a bin");
                 Console.WriteLine("2: Stock Reorder Report");
                 Console.WriteLine("3: Print Log");
+                //Console.WriteLine("4: UnitTest Simulation");
                 Console.Write("Selected Action: ");
 
                 while (!(int.TryParse(Console.ReadLine(), out actionId) && (actionId >= -1 && actionId <= 3)))
@@ -44,6 +44,7 @@ namespace ConsoleApp_OminCell
                     Console.WriteLine("1: Remove Medication from a bin");
                     Console.WriteLine("2: Stock Reorder Report");
                     Console.WriteLine("3: Print Log");
+                    //Console.WriteLine("4: UnitTest Simulation");
                     Console.Write("Selected Action: ");
                 }
                 Console.WriteLine();
@@ -56,18 +57,35 @@ namespace ConsoleApp_OminCell
                         RemoveMedicationUI(ref cabinet, userId);
                         break;
                     case 2:
-                        cabinet.StockReorderReport();
+                        foreach (var item in cabinet.StockReorderReport())
+                        {
+                            Console.WriteLine(item);
+                        }
                         break;
                     case 3:
-                        cabinet.PrintLog();
+                        foreach (var item in cabinet.GetLog())
+                        {
+                            Console.WriteLine(item);
+                        }
                         break;
+                    //case 4:
+                    //    CabinetUnitTest cabinetUnitTest = new CabinetUnitTest();
+                    //    cabinetUnitTest.Initialize();
+                    //    cabinetUnitTest.AddMedication_ShouldNoWarning_WhenMedicationQuantityLowerThanUnits();
+                    //    cabinetUnitTest.Initialize();
+                    //    cabinetUnitTest.RemoveMedication_ShouldNoWarning_WhenMedicationQuantityToRemoveIsGreaterThanUnitsOnStock();
+                    //    cabinetUnitTest.Initialize();
+                    //    cabinetUnitTest.StockReorderReport_ShouldReturnMessage_WhenMedicationQuantityLowerThanMinimum();
+                    //    cabinetUnitTest.Initialize();
+                    //    cabinetUnitTest.RemoveMedication_ShouldGiveWarning_WhenMedicationNotExistInCurrentBin();
+                    //    break;
                     default:
                         break;
                 }
 
                 Console.WriteLine();
             }
-            Console.WriteLine("Shutting Down, press any key to exit");
+            Console.WriteLine("Shutting Down, press Enter to exit");
             Console.Read();
         }
 
@@ -99,7 +117,7 @@ namespace ConsoleApp_OminCell
             }
             Console.Write("Provide the Medication Name, please: ");
             string medicationName = Console.ReadLine();
-            
+
             int quantity = -1;
             Console.Write("Provide the Medication quantity, please: ");
             while (!(int.TryParse(Console.ReadLine(), out quantity) && (quantity >= 1 && quantity <= 10000)))
@@ -107,12 +125,12 @@ namespace ConsoleApp_OminCell
                 Console.WriteLine("Invalid input!");
                 Console.Write("Provide the Medication quantity, please (1-10000): ");
             }
-            Bin selectedBin = (Bin)cabinet.Bins.Where(x => x.ID == binId).First();
-            string actionResult = selectedBin.AddMedication(new Medication { ID = medicationId, Name = medicationName }, quantity);
+            
+            string actionResult = cabinet.AddMedicationToBin(userId, binId, medicationId, medicationName, quantity);
+            
             Console.WriteLine();
             Console.WriteLine(actionResult);
-            cabinet.AddLog(userId, $"ActionType: Add, Action: {actionResult}");
-            if (!actionResult.StartsWith("Warning")) cabinet.UpdateReorderReport();
+            
         }
         private static void RemoveMedicationUI(ref Cabinet cabinet, int userId)
         {
@@ -140,52 +158,21 @@ namespace ConsoleApp_OminCell
                 Console.WriteLine("Invalid input!");
                 Console.Write("Provide the Medication ID, please (0-10000): ");
             }
-            
-            int quantity = -1;
+
             Console.Write("Provide the Medication quantity to get removed, please: ");
+
+            int quantity;
             while (!(int.TryParse(Console.ReadLine(), out quantity) && (quantity >= 1 && quantity <= 10000)))
             {
                 Console.WriteLine("Invalid input!");
                 Console.Write("Provide the Medication quantity, please (1-10000): ");
             }
-            Bin selectedBin = (Bin)cabinet.Bins.Where(x => x.ID == binId).First();
-            string actionResult = selectedBin.RemoveMedicationByID(medicationId, quantity);
+
+            string actionResult = cabinet.RemoveMedicationFromBin(userId, binId, medicationId, quantity);
+
             Console.WriteLine();
-            Console.WriteLine(actionResult);
-            cabinet.AddLog(userId, $"ActionType: Remove, Action: {actionResult}");
-            if (!actionResult.StartsWith("Warning")) cabinet.UpdateReorderReport();
+            Console.WriteLine(actionResult);            
         }
-
-        static void IntialiseCabinet(ref Cabinet cabinet)
-        {
-            BinFactory bf = new BinFactory();
-            cabinet.UserIds = new List<int>();
-            cabinet.Log = new List<string>();
-            cabinet.UserIds = new List<int>();
-            cabinet.Bins = new List<IBin>();
-            cabinet.ReorderReport = new Dictionary<Medication, string>();
-            cabinet.IsEmpty = true;
-
-            // add 5 users
-            for (int i = 0; i < 5; i++)
-            {
-                cabinet.UserIds.Add(i);
-            }
-
-            // load the cabinets with 10 bins
-            for (int i = 0; i < 2; i++)
-            {
-                cabinet.Bins.Add(BinFactory.CreateLargeBin(i));
-            }
-            for (int i = 0; i < 5; i++)
-            {
-                cabinet.Bins.Add(BinFactory.CreateMediumBin(i + 2));
-            }
-            for (int i = 0; i < 3; i++)
-            {
-                cabinet.Bins.Add(BinFactory.CreateSmallBin(i + 6));
-            }
-        }        
     }
 
     public enum BinType
@@ -194,8 +181,8 @@ namespace ConsoleApp_OminCell
         medium,
         small
     }
-    
-    public class Medication: IMedication
+
+    public class Medication : IMedication
     {
         public int ID { get; set; }
         public string Name { get; set; }
@@ -232,16 +219,15 @@ namespace ConsoleApp_OminCell
         List<string> Log { get; set; }
         List<IBin> Bins { get; set; }
         Dictionary<Medication, string> ReorderReport { get; set; }
-
         bool IsEmpty { get; set; }
 
-        void AddLog(int userID, string message);
+        string AddMedicationToBin(int userId, int binId, int medicationId, string medicationName, int quantity);
 
-        void UpdateReorderReport();
+        string RemoveMedicationFromBin(int userId, int binId, int medicationId, int quantity);
 
-        void StockReorderReport();
+        List<string> StockReorderReport();
 
-        void PrintLog();
+        List<string> GetLog();
     }
 
     public class BinFactory : IBinFactory
@@ -288,7 +274,7 @@ namespace ConsoleApp_OminCell
             return bin;
         }
     }
-    
+
 
     public class Bin : IBin
     {
@@ -304,13 +290,13 @@ namespace ConsoleApp_OminCell
                 Medication medicationFound = Inventory.Where(x => x.Key.ID == medication.ID).First().Key;
 
                 Inventory.TryGetValue(medicationFound, out int quantVal);
-                
+
                 if (quantVal + quantity <= Units)
                 {
                     Inventory[medicationFound] = quantVal + quantity;
                 }
                 else return $"Warning!: Add Medication {medication.Name} (id:{medication.ID}) Failed, quantity is bigger than {Units - quantVal} units available in this bin having id: {ID}!";
-                
+
             }
             else
             {
@@ -344,7 +330,7 @@ namespace ConsoleApp_OminCell
             }
             return $"Medication {medication.Name} (id:{medication.ID}), Quantity: {quantity} Removed from this bin having id: {ID}.";
         }
-                
+
         public string RemoveMedicationByID(int medicationId, int quantity)
         {
             Medication medication = Inventory.Where(x => x.Key.ID == medicationId)?.FirstOrDefault().Key;
@@ -362,12 +348,69 @@ namespace ConsoleApp_OminCell
 
         public bool IsEmpty { get; set; }
 
-        public void AddLog(int userID, string message)
+
+
+        public void IntialiseCabinet()
+        {
+            BinFactory bf = new BinFactory();
+            UserIds = new List<int>();
+            Log = new List<string>();
+            UserIds = new List<int>();
+            Bins = new List<IBin>();
+            ReorderReport = new Dictionary<Medication, string>();
+            IsEmpty = true;
+
+            // add 5 users
+            for (int i = 0; i < 5; i++)
+            {
+                UserIds.Add(i);
+            }
+
+            // load the cabinets with 10 bins
+            for (int i = 0; i < 2; i++)
+            {
+                Bins.Add(BinFactory.CreateLargeBin(i));
+            }
+            for (int i = 0; i < 5; i++)
+            {
+                Bins.Add(BinFactory.CreateMediumBin(i + 2));
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                Bins.Add(BinFactory.CreateSmallBin(i + 6));
+            }
+        }
+
+        public string AddMedicationToBin(int userId, int binId, int medicationId, string medicationName, int quantity)
+        {
+            Bin selectedBin = (Bin)Bins.Where(x => x.ID == binId).First();
+            string actionResult = selectedBin.AddMedication(new Medication { ID = medicationId, Name = medicationName }, quantity);
+
+            AddLog(userId, $"ActionType: Add, Action: {actionResult}");
+            
+            if (!actionResult.StartsWith("Warning")) UpdateReorderReport();
+            
+            return actionResult;
+        }
+
+        public string RemoveMedicationFromBin(int userId, int binId, int medicationId, int quantity)
+        {
+            Bin selectedBin = (Bin)Bins.Where(x => x.ID == binId).First();
+            string actionResult = selectedBin.RemoveMedicationByID(medicationId, quantity);
+            
+            AddLog(userId, $"ActionType: Remove, Action: {actionResult}");
+            
+            if (!actionResult.StartsWith("Warning")) UpdateReorderReport();
+
+            return actionResult;
+        }
+
+        private void AddLog(int userID, string message)
         {
             Log.Add($"UserID: {userID}, {message}");
         }
 
-        public void UpdateReorderReport()
+        private void UpdateReorderReport()
         {
             int percentageWarning = 20;
             int minStockFine = (15 + 10 + 5) * percentageWarning / 100;
@@ -410,35 +453,115 @@ namespace ConsoleApp_OminCell
             }
         }
 
-        public void StockReorderReport()
-        {            
+        public List<string> StockReorderReport()
+        {
             if (IsEmpty)
             {
-                Console.WriteLine("All the bins are empty!");
-                return;
+                return new List<string>() { "All the bins are empty!" };
             }
 
             if (ReorderReport.Count == 0)
-                Console.WriteLine("All stocks are sufficient");
+                return new List<string>() { "All stocks are sufficient" };
 
-            foreach (var item in ReorderReport)
-            {
-                Console.WriteLine(item.Value);
-            }
+            
+            return ReorderReport.Select(x => x.Value).ToList();
         }
 
-        public void PrintLog()
+        public List<string> GetLog()
         {
             if (Log.Count() == 0)
             {
-                Console.WriteLine("The log is empty!");
-                return;
+                return new List<string>() { "The log is empty!" };
             }
 
-            foreach (var logItem in Log)
-            {
-                Console.WriteLine(logItem);
-            }
+            return Log;
         }
+    }
+
+    [TestFixture]
+    public class CabinetUnitTest
+    {
+        int UserId { get; set; }
+        Cabinet Cabinet { get; set; }
+
+        [SetUp]
+        public void Initialize()
+        {
+            this.UserId = 0;
+            Cabinet = new Cabinet();
+            Cabinet.IntialiseCabinet();
+        }
+
+        [Test, Order(1)]
+        public void AddMedication_ShouldNoWarning_WhenMedicationQuantityLowerThanUnits()
+        {
+            // Arrange
+            int binId = 0;
+            int medicationId = 0;
+            string medicationName = "Paracetamol";
+            int quantity = 8;
+
+            // Act
+            var actualOutput = Cabinet.AddMedicationToBin(UserId, binId, medicationId, medicationName, quantity);
+
+            // Assert
+            Assert.AreEqual("Medication Paracetamol (id:0), Quantity: 8 Added to this bin having id: 0.", actualOutput);
+        }
+
+        [Test, Order(2)]
+        public void RemoveMedication_ShouldNoWarning_WhenMedicationQuantityToRemoveIsGreaterThanUnitsOnStock()
+        {
+            // Arrange
+            int binId = 0;
+            int medicationId = 0;
+            string medicationName = "Paracetamol";
+            int quantity = 8;
+            Cabinet.AddMedicationToBin(UserId, binId, medicationId, medicationName, quantity);
+            quantity = 3;
+            // Act
+            var actualOutput = Cabinet.RemoveMedicationFromBin(UserId, binId, medicationId, quantity);
+
+            // Assert
+            Assert.AreEqual("Medication Paracetamol (id:0), Quantity: 3 Removed from this bin having id: 0.", actualOutput);
+        }
+
+        [Test, Order(3)]
+        public void StockReorderReport_ShouldReturnMessage_WhenMedicationQuantityLowerThanMinimum()
+        {
+            // Arrange
+            int binId = 0;
+            int medicationId = 0;
+            string medicationName = "Paracetamol";
+            int quantity = 5;
+            Cabinet.AddMedicationToBin(UserId, binId, medicationId, medicationName, quantity);
+
+            // Act
+            var actualOutput = Cabinet.StockReorderReport();
+
+            // Assert
+            Assert.AreEqual(1, actualOutput.Count);
+            Assert.AreEqual("Medication Paracetamol (id:0) stock became 1 units lower than minimum allowed", actualOutput[0]);
+        }
+
+        [Test, Order(4)]
+        public void RemoveMedication_ShouldGiveWarning_WhenMedicationNotExistInCurrentBin()
+        {
+            // Arrange
+            int binId = 0;
+            int medicationId = 0;
+            int quantity = 3;
+
+            // Act
+            var actualOutput = Cabinet.RemoveMedicationFromBin(UserId, binId, medicationId, quantity);
+
+            // Assert
+            Assert.AreEqual("Warning!: Remove  Medication Unknown (id:0) Failed, no such medication available in this bin having id: 0!", actualOutput);
+        }
+
+        // Note:
+        // A lot more things to write unit test for like warnings when we add more than possible or remove more than available, or try to remove from empty bins for example, reorder list related all scennarios,
+        // testing cases to prove the user activity logging is correct and so on, however not sure how was this was imagined by the requester to do in a single file editor given by [RemoteInterview.io] 
+        // as I'm not even able to trigger testing here, only call the like any other class methods by pressing 4 on action input user ui.
+        // That single editor limitation I used here too not splitting classes in their own class files for example.
     }
 }
