@@ -1,6 +1,9 @@
 <p><strong>﻿# Omnicell-XT-Automated-Dispensing-Cabinet</strong></p>
 <h3>Omnicell [RemoteInterview.io] Programing test.</h3>
 
+NOTE: This solution was made to be able to copy and paste back into [RemoteInterview.io] single page editor.
+I will do another project within this solution and split things properly in their own file as this single file solution is ugly as is limited to one block of code, and that limitation is not present in production environment. 
+
 <p><strong>Description:</strong></p>
 
 <p>You have been tasked to create the internal logic for the next generation Omnicell XT Automated Dispensing Cabinet. </p>
